@@ -1,9 +1,21 @@
 import React from 'react';
+import {BrowserRouter, Route, Routes} from 'react-router-dom';
+import Header from './Components/Header';
+import Home from './Routes/Home';
+import Search from './Routes/Search';
+import TV from './Routes/TV';
+
 
 const App = () => {
   return (
-    <div>
-    </div>
+    <BrowserRouter>
+    <Header/>
+    <Routes>
+      <Route path='/' element={<Home/>}/>
+      <Route path='/tv' element={<TV/>}/>
+      <Route path='/search' element={<Search/>}/>
+    </Routes>
+    </BrowserRouter>
   );
 }
 
