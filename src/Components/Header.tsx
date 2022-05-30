@@ -1,9 +1,9 @@
-import { motion } from 'framer-motion';
-import React, { useRef, useState } from 'react';
+import { motion, useAnimation, useViewportScroll } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
-const Nav = styled.nav`
+const Nav = styled(motion.nav)`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -71,7 +71,14 @@ const Circle = styled(motion.span)`
 const Input = styled(motion.input)`
   transform-origin: right center;
   position: absolute;
-  left: -150px;
+  right: 0;
+  padding-left: 40px;
+  z-index: -1;
+  color: white;
+  font-size: 16px;
+  background-color: transparent;
+  border: 1px solid ${(props) => props.theme.white.lighter};
+  outline: none;
 `;
 
 const logoVariants = {
@@ -86,15 +93,46 @@ const logoVariants = {
   }
 }
 
+const navVariants = {
+  top: {
+    backgroundColor: 'rgba(0,0,0,1)'
+  },
+  scroll: {
+    backgroundColor: 'rgba(0,0,0,0)'
+  }
+}
+
 const Header = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const homeMatch = useMatch('/');
   const tvMatch = useMatch('tv');
   const [searchOpen, setSearchOpen] = useState(false);
-  const onToggleSearch = () => setSearchOpen(prev => !prev);
+  const inputAnimation = useAnimation();
+  const scrollAnimation = useAnimation();
+  const {scrollY} = useViewportScroll();
+  const onToggleSearch = () => {
+    if(searchOpen) {
+      inputAnimation.start({scaleX: 0})
+    } else {
+      inputAnimation.start({scaleX: 1})
+    }
+    setSearchOpen(prev => !prev);
+  }
   if(searchOpen) inputRef.current?.focus();
+
+  useEffect(() => {
+    scrollY.onChange(() => {
+      if(scrollY.get()>80) {
+        scrollAnimation.start('scroll')
+      } else {
+        scrollAnimation.start('top')
+      }
+    });
+  },[scrollAnimation, scrollY]);
+
+
   return (
-    <Nav>
+    <Nav variants={navVariants} animate={scrollAnimation} initial='top'>
       <Col>
         <Logo
           variants={logoVariants}
@@ -145,9 +183,10 @@ const Header = () => {
           <Input
           ref={inputRef}
           onBlur={onToggleSearch}
-          animate={{scaleX: searchOpen ? 1 : 0}}
+          initial={{scaleX: 0}}
+          animate={inputAnimation}
           transition={{type: 'linear'}}
-          placeholder='Search for movie or tv show...'
+          placeholder='Search'
         />
         </Search>
       </Col>
