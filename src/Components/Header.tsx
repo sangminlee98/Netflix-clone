@@ -138,6 +138,7 @@ const Header = () => {
           variants={logoVariants}
           initial='normal'
           whileHover='active'
+          animate='normal'
           xmlns="http://www.w3.org/2000/svg"
           width="1024"
           height="276.742"
