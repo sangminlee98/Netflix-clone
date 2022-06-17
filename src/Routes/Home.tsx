@@ -6,6 +6,7 @@ import { getMovies, INowPlaying } from '../api';
 import { makeImagePath } from '../utils';
 
 const Wrapper = styled.div`
+  margin-top: 80px;
   height: 200vh;
   background-color: black;
 `;
@@ -16,13 +17,13 @@ const Loader = styled.div`
   justify-content: center;
   align-items: center;
 `;
-const Banner = styled.div<{bgPath: string}>`
+const Banner = styled.div<{bgpath: string}>`
   height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   padding: 60px;
-  background-image: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,1)), url(${props => props.bgPath});
+  background-image: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,1)), url(${props => props.bgpath});
   background-size: cover;
 `;
 const Title = styled.h2`
@@ -42,12 +43,14 @@ const Row = styled(motion.div)`
   position: absolute;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  grid-gap: 10px;
+  grid-gap: 5px;
   width: 100%;
 `;
-const Box = styled(motion.div)`
+const Box = styled(motion.div)<{bgpath: string}>`
   height: 200px;
-  background-color: white;
+  background-image: url(${props => props.bgpath});
+  background-size: cover;
+  background-position: center center;
   color: black;
 `;
 
@@ -64,25 +67,35 @@ const rowVariants = {
 };
 
 const Home = () => {
-  const [index, setIndex] = useState(0);
-  const increaseIndex = () => setIndex(prev => prev+1);
+  const offset = 6;
   const {data, isLoading} = useQuery<INowPlaying>(['movies','nowPlaying'], getMovies);
-  console.log(data, isLoading);
+  const [index, setIndex] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  const increaseIndex = () => {
+    if(data){
+      if(leaving) return;
+      toggleLeaving();
+      const totalMovies = data.results.length-1;
+      const maxIndex = Math.floor(totalMovies/offset)-1;
+      setIndex(prev => prev===maxIndex ? 0 : prev+1);
+    }
+  };
+  const toggleLeaving = () => setLeaving(prev => !prev);
   return (
     <Wrapper>
       {isLoading ? (
         <Loader>Loading...</Loader> 
       ) : (
         <>
-          <Banner onClick={increaseIndex} bgPath={makeImagePath(data?.results[0].backdrop_path || '')}>
+          <Banner onClick={increaseIndex} bgpath={makeImagePath(data?.results[0].backdrop_path || '')}>
             <Title>{data?.results[0].title}</Title>
             <Overview>{data?.results[0].overview}</Overview>
           </Banner>
           <Slider>
-            <AnimatePresence>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row variants={rowVariants} initial='hidden' animate='visible' exit='exit' transition={{type:'tween', duration: .8}} key={index}>
                 {
-                  [1,2,3,4,5,6].map(i => <Box key={i}>{i}</Box>)
+                  data?.results.slice(1).slice(offset*index, offset*index+offset).map(movie => <Box bgpath={makeImagePath(movie.backdrop_path, 'w500')} key={movie.id}>{movie.title}</Box>)
                 }
               </Row>
             </AnimatePresence>
