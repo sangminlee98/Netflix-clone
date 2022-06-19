@@ -6,7 +6,6 @@ import { getMovies, INowPlaying } from '../api';
 import { makeImagePath } from '../utils';
 
 const Wrapper = styled.div`
-  margin-top: 80px;
   height: 200vh;
   background-color: black;
 `;
@@ -50,13 +49,25 @@ const Box = styled(motion.div)<{bgpath: string}>`
   height: 200px;
   background-image: url(${props => props.bgpath});
   background-size: cover;
-  background-position: center center;
-  color: black;
+  background-position: center;
   &:first-child {
     transform-origin: center left;
   }
   &:last-child {
     transform-origin: center right;
+  }
+`;
+const Info = styled(motion.div)`
+  padding: 10px;
+  background-color: ${props => props.theme.black.lighter};
+  text-align: center;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  opacity: 0;
+  h4 {
+    text-align: center;
+    font-size: 18px;
   }
 `;
 
@@ -68,7 +79,7 @@ const RowVariants = {
     x: 0,
   },
   exit: {
-    x: -window.outerWidth - 10
+    x: -window.outerWidth - 10,
   },
 };
 
@@ -83,6 +94,16 @@ const BoxVariants = {
       delay: .5,
       duration: .3,
     }
+  }
+}
+
+const InfoVariants = {
+  hover: {
+    opacity: 1,
+    transition: {
+      delay: .5,
+      duration: .3,
+    },
   }
 }
 
@@ -122,7 +143,10 @@ const Home = () => {
                       whileHover='hover'
                       transition={{type:'tween'}}
                       bgpath={makeImagePath(movie.backdrop_path, 'w500')}
-                      key={movie.id}>{movie.title}
+                      key={movie.id}>
+                        <Info variants={InfoVariants}>
+                          <h4>{movie.title}</h4>
+                        </Info>
                     </Box>)
                 }
               </Row>
