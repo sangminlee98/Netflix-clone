@@ -52,9 +52,15 @@ const Box = styled(motion.div)<{bgpath: string}>`
   background-size: cover;
   background-position: center center;
   color: black;
+  &:first-child {
+    transform-origin: center left;
+  }
+  &:last-child {
+    transform-origin: center right;
+  }
 `;
 
-const rowVariants = {
+const RowVariants = {
   hidden: {
     x: window.outerWidth + 10
   },
@@ -65,6 +71,20 @@ const rowVariants = {
     x: -window.outerWidth - 10
   },
 };
+
+const BoxVariants = {
+  normal: {
+    scale: 1
+  },
+  hover: {
+    scale: 1.3,
+    y: -50,
+    transition: {
+      delay: .5,
+      duration: .3,
+    }
+  }
+}
 
 const Home = () => {
   const offset = 6;
@@ -93,9 +113,17 @@ const Home = () => {
           </Banner>
           <Slider>
             <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
-              <Row variants={rowVariants} initial='hidden' animate='visible' exit='exit' transition={{type:'tween', duration: .8}} key={index}>
+              <Row variants={RowVariants} initial='hidden' animate='visible' exit='exit' transition={{type:'tween', duration: .8}} key={index}>
                 {
-                  data?.results.slice(1).slice(offset*index, offset*index+offset).map(movie => <Box bgpath={makeImagePath(movie.backdrop_path, 'w500')} key={movie.id}>{movie.title}</Box>)
+                  data?.results.slice(1).slice(offset*index, offset*index+offset).map(movie => 
+                    <Box
+                      variants={BoxVariants}
+                      initial='normal'
+                      whileHover='hover'
+                      transition={{type:'tween'}}
+                      bgpath={makeImagePath(movie.backdrop_path, 'w500')}
+                      key={movie.id}>{movie.title}
+                    </Box>)
                 }
               </Row>
             </AnimatePresence>
