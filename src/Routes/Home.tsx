@@ -1,6 +1,7 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useViewportScroll } from 'framer-motion';
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
+import { useMatch, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { getMovies, INowPlaying } from '../api';
 import { makeImagePath } from '../utils';
@@ -49,7 +50,7 @@ const Box = styled(motion.div)<{bgpath: string}>`
   height: 200px;
   background-image: url(${props => props.bgpath});
   background-size: cover;
-  background-position: center;
+  background-position: center center;
   &:first-child {
     transform-origin: center left;
   }
@@ -69,6 +70,27 @@ const Info = styled(motion.div)`
     text-align: center;
     font-size: 18px;
   }
+`;
+
+const Overlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  opacity: 0;
+`;
+const BigMovie = styled(motion.div)<{scrollY: number, bgpath: string}>`
+  position: absolute;
+  width: 40vw;
+  height: 60vh;
+  background: url(${props => props.bgpath});
+  background-position: center center;
+  background-size: cover;
+  top: ${props => props.scrollY + 100}px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
 `;
 
 const RowVariants = {
@@ -109,9 +131,22 @@ const InfoVariants = {
 
 const Home = () => {
   const offset = 6;
+  const bigMovieMatch = useMatch('movies/:movieId');
+  console.log(bigMovieMatch);
+  const navigate = useNavigate();
+  const {scrollY} = useViewportScroll();
   const {data, isLoading} = useQuery<INowPlaying>(['movies','nowPlaying'], getMovies);
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
+  const onlyBackdropPath = (movies: INowPlaying) => {
+    const copy = {...movies};
+    copy.results.map((movie, index) => {
+      if(movie.backdrop_path === null) {
+        return copy.results.splice(index, 1);
+      }
+    });
+    return copy;
+  }
   const increaseIndex = () => {
     if(data){
       if(leaving) return;
@@ -122,6 +157,12 @@ const Home = () => {
     }
   };
   const toggleLeaving = () => setLeaving(prev => !prev);
+  const onBoxClick = (movieId: number) => {
+    navigate(`movies/${movieId}`);
+  }
+  const onBigMovieClick = () => {
+    navigate('/');
+  }
   return (
     <Wrapper>
       {isLoading ? (
@@ -136,13 +177,15 @@ const Home = () => {
             <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row variants={RowVariants} initial='hidden' animate='visible' exit='exit' transition={{type:'tween', duration: .8}} key={index}>
                 {
-                  data?.results.slice(1).slice(offset*index, offset*index+offset).map(movie => 
+                  data && {...onlyBackdropPath(data)}.results.slice(1).slice(offset*index, offset*index+offset).map(movie => 
                     <Box
+                      layoutId={movie.id+""}
                       variants={BoxVariants}
                       initial='normal'
                       whileHover='hover'
                       transition={{type:'tween'}}
-                      bgpath={makeImagePath(movie.backdrop_path, 'w500')}
+                      bgpath={makeImagePath(movie.backdrop_path || '', 'w500')}
+                      onClick={() => onBoxClick(movie.id)}
                       key={movie.id}>
                         <Info variants={InfoVariants}>
                           <h4>{movie.title}</h4>
@@ -152,6 +195,21 @@ const Home = () => {
               </Row>
             </AnimatePresence>
           </Slider>
+          <AnimatePresence>
+            {
+              bigMovieMatch ? (
+                <>
+                  <Overlay animate={{opacity: 1}} exit={{opacity: 0}} onClick={onBigMovieClick}/>
+                  <BigMovie
+                    layoutId={bigMovieMatch.params.movieId}
+                    scrollY={scrollY.get()}
+                    bgpath={makeImagePath(data?.results.find(movie => movie.id === parseInt(bigMovieMatch.params.movieId!))?.backdrop_path || '')}
+                  />
+                </>
+              ) : null
+            }
+          </AnimatePresence>
+          
         </>
       )}
     </Wrapper>
