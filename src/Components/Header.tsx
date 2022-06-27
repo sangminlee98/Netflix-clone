@@ -1,7 +1,12 @@
 import { motion, useAnimation, useViewportScroll } from 'framer-motion';
-import React, { useEffect, useRef, useState } from 'react';
-import { Link, useMatch } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, useMatch, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+
+interface IForm {
+  keyword: string;
+}
 
 const Nav = styled(motion.nav)`
   display: flex;
@@ -46,7 +51,7 @@ const Item = styled.li`
     color: ${props => props.theme.white.lighter};
   }
 `;
-const Search = styled.span`
+const Search = styled.form`
   color: white;
   position: relative;
   display: flex;
@@ -104,7 +109,7 @@ const navVariants = {
 }
 
 const Header = () => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const homeMatch = useMatch('/');
   const tvMatch = useMatch('tv');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -116,10 +121,10 @@ const Header = () => {
       inputAnimation.start({scaleX: 0})
     } else {
       inputAnimation.start({scaleX: 1})
+      setFocus('keyword');
     }
     setSearchOpen(prev => !prev);
   }
-  if(searchOpen) inputRef.current?.focus();
 
   useEffect(() => {
     scrollY.onChange(() => {
@@ -130,8 +135,12 @@ const Header = () => {
       }
     });
   },[scrollAnimation, scrollY]);
-
-
+  
+  const {register, handleSubmit, setFocus, setValue} = useForm<IForm>()
+  const onValid = (data: IForm) => {
+    setValue('keyword', '');
+    navigate(`/search?keyword=${data.keyword}`);
+  }
   return (
     <Nav variants={navVariants} animate={scrollAnimation} initial='top'>
       <Col>
@@ -166,7 +175,7 @@ const Header = () => {
         </Items>
       </Col>
       <Col>
-        <Search>
+        <Search onSubmit={handleSubmit(onValid)}>
           <motion.svg
             onClick={onToggleSearch}
             animate={{x: searchOpen ? -180 : 0}}
@@ -183,13 +192,13 @@ const Header = () => {
             ></path>
           </motion.svg>
           <Input
-          ref={inputRef}
-          onBlur={onToggleSearch}
-          initial={{scaleX: 0}}
-          animate={inputAnimation}
-          transition={{type: 'linear'}}
-          placeholder='Search'
-        />
+            {...register("keyword", {required: true})}
+            onBlur={onToggleSearch}
+            initial={{scaleX: 0}}
+            animate={inputAnimation}
+            transition={{type: 'linear'}}
+            placeholder='Search'
+          />
         </Search>
       </Col>
     </Nav>
